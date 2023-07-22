@@ -9,6 +9,8 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
             add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
             add_action( 'save_post', [$this, 'savePost'], 10, 2 );
 
+            // Custom Search
+            add_action( 'pre_get_posts', array( $this, 'customSearchQuery' ) );
 
             // ADMIN COLUMNS to include sortable meta data
             add_filter( 'manage_rc-slider_posts_columns', [$this, 'rcSliderCPTColumns']);
@@ -46,7 +48,7 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
                 'can_export' => true,
                 'has_archive' => true,
                 'menu_position' => 5,
-                //'taxonomies'         => array( 'category', 'post_tag' ),
+                'taxonomies'         => array( 'category', 'post_tag' ),
                 'show_in_rest' => true,
                 'menu_icon' => 'dashicons-images-alt2'
             );
@@ -140,5 +142,77 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
             }
             return true;
         }
+
+        /**
+         * @param $query
+         * @return void
+         * Custom Search Query. Combines meta field with main search. May need to update if searching by category.
+         */
+        public function customSearchQuery($query): void {
+            global $wpdb;
+
+            if ( is_search() ) {
+                // Prevent duplicates in the search results
+                add_filter( 'posts_distinct', function( $distinct ) {
+                    return "DISTINCT";
+                });
+
+                // Modify the WHERE clause to include custom meta fields in the search
+                add_filter( 'posts_where', function( $where ) use ( $wpdb ) {
+                    $search_term = get_search_query();
+                    if ( !empty($search_term) ) {
+                        $where = preg_replace(
+                            "/\(\s*".$wpdb->posts.".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
+                            "(".$wpdb->posts.".post_title LIKE $1) OR (".$wpdb->postmeta.".meta_value LIKE $1)", $where );
+                    }
+                    return $where;
+                });
+
+                // Join the postmeta table for custom meta fields search
+                add_action( 'posts_join', function( $join ) use ( $wpdb ) {
+                    $join .=' LEFT JOIN '.$wpdb->postmeta. ' ON '. $wpdb->posts . '.ID = ' . $wpdb->postmeta . '.post_id ';
+                    return $join;
+                });
+            }
+        }
+        /**
+         * @param $join
+         * @return mixed|string
+         * Search by meta values only
+         */
+        public function alterMainQuery($query) {
+            $post_type = 'rc-slider';
+            $search_term = $query->query_vars['s'];
+            $custom_fields = ['rc_slider_link_text', 'rc_slider_link_url'];
+
+
+            if (!is_admin()) {
+                return;
+            }
+
+            if (!$query->is_main_query()) {
+                return;
+            }
+
+            if ($query->query['post_type'] != $post_type) {
+                return;
+            }
+
+           $query->query_vars['s'] = '';
+
+            if ($search_term != '') {
+                $meta_query = array('relation' => 'OR');
+                foreach ($custom_fields as $custom_field) {
+                    $meta_query[] = array(
+                        'key' => $custom_field,
+                        'value' => $search_term,
+                        'compare' => 'LIKE'
+                    );
+                }
+
+                $query->set('meta_query', $meta_query);
+            }
+        }
+
     }
 }
