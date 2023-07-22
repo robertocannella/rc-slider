@@ -79,7 +79,7 @@ if (!class_exists('RC_Slider')) {
             // Code to unregister custom post types, taxonomies, and rewrite rules
             // ...
             flush_rewrite_rules(); // Flush the rewrite rules after modifications
-
+            unregister_post_type('rc-slider' );
         }
         /**
          * Uninstall
