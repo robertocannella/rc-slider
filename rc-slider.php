@@ -28,11 +28,74 @@ You should have received a copy of the GNU General Public License
 along with {Rc Slider}. If not, see {ttp://robertocannella.com/wordpress}.
 */
 
-if (!defined('ABS_PATH')) {die("-not allowed"); exit;}
+if (!defined('ABSPATH')) {
+    die("-not allowed");
+    exit;
+}
 
-if (! class_exists( 'RC_Slider ' ) ) {
-    class RC_Slider {
+/**
+ *  Main RC_Slider class
+ */
+if (!class_exists('RC_Slider ')) {
+    class RC_Slider
+    {
+        public function __construct()
+        {
+            $this->defineConstants();
+        }
+
+        /**
+         * Define global constants here
+         */
+        public function defineConstants(): void
+        {
+            define ( 'RC_SLIDER_PATH' , plugin_dir_path( __FILE__ ));
+            define ( 'RC_SLIDER_URL' , plugin_dir_url( __FILE__ ));
+            define ( 'RC_SLIDER_VERSION' , '1.0.0' );
+
+        }
+
+        /**
+         * Activation
+         */
+        public function activate(){
+
+            // Code to register custom post types, taxonomies, and rewrite rules
+            // ...
+
+            // flush_rewrite_rules() does not work great when activating plugin, use
+            // update_option to clear table
+            // flush_rewrite_rules(); // Flush the rewrite rules after modifications
+            update_option( ' rewrite_rules' );// Flush the rewrite rules after modifications
+
+        }
+        /**
+         * Deactivations
+         */
+        public function deactivate(){
+
+            // Code to unregister custom post types, taxonomies, and rewrite rules
+            // ...
+            flush_rewrite_rules(); // Flush the rewrite rules after modifications
+
+        }
+        /**
+         * Uninstall
+         */
+        public function uninstall(){
+
+        }
 
     }
+}
 
+/**
+ * Instantiate the plugin
+ */
+
+if (class_exists('RC_Slider')) {
+    register_activation_hook(__FILE__, ['RC_Slider', 'activate']);
+    register_deactivation_hook(__FILE__, ['RC_Slider', 'deactivate']);
+    register_uninstall_hook(__FILE__, ['RC_Slider', 'uninstall']);
+    $rc_slider = new RC_Slider();
 }
