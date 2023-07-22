@@ -36,12 +36,14 @@ if (!defined('ABSPATH')) {
 /**
  *  Main RC_Slider class
  */
-if (!class_exists('RC_Slider ')) {
+if (!class_exists('RC_Slider')) {
     class RC_Slider
     {
         public function __construct()
         {
             $this->defineConstants();
+            require_once ( RC_SLIDER_PATH . '/post-types/class.RC_Slider_Post_Type.php' );
+            $rc_slider_post_type = new RC_Slider_Post_Type();
         }
 
         /**
@@ -58,21 +60,21 @@ if (!class_exists('RC_Slider ')) {
         /**
          * Activation
          */
-        public function activate(){
+        public static function activate(){
 
             // Code to register custom post types, taxonomies, and rewrite rules
             // ...
 
             // flush_rewrite_rules() does not work great when activating plugin, use
             // update_option to clear table
-            // flush_rewrite_rules(); // Flush the rewrite rules after modifications
-            update_option( ' rewrite_rules' );// Flush the rewrite rules after modifications
+             flush_rewrite_rules(); // Flush the rewrite rules after modifications
+           //  update_option( ' rewrite_rules' );// Flush the rewrite rules after modifications
 
         }
         /**
          * Deactivations
          */
-        public function deactivate(){
+        public static function deactivate(){
 
             // Code to unregister custom post types, taxonomies, and rewrite rules
             // ...
@@ -82,7 +84,7 @@ if (!class_exists('RC_Slider ')) {
         /**
          * Uninstall
          */
-        public function uninstall(){
+        public static function uninstall(){
 
         }
 
@@ -94,8 +96,11 @@ if (!class_exists('RC_Slider ')) {
  */
 
 if (class_exists('RC_Slider')) {
+
     register_activation_hook(__FILE__, ['RC_Slider', 'activate']);
     register_deactivation_hook(__FILE__, ['RC_Slider', 'deactivate']);
     register_uninstall_hook(__FILE__, ['RC_Slider', 'uninstall']);
+
     $rc_slider = new RC_Slider();
+
 }
