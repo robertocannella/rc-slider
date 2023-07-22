@@ -7,7 +7,7 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
         {
             add_action('init', [$this, 'createPostType'], 10);
             add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
-
+            add_action( 'save_post', [$this, 'savePost'], 10, 2 );
 
         }
 
@@ -17,6 +17,7 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
                 'name' => _x('Sliders', 'rc-slider'),
                 'singular_name' => _x('Slider', 'rc-slider'),
                 'search_items' => __('Search Sliders', 'rc-slide'),
+
             );
 
             $args = array(
@@ -59,8 +60,56 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
             );
         }
         public function addInnerMetaBoxes ($post):void {
-
+            require_once ( RC_SLIDER_PATH . 'views/rc-slider_metabox.php');
         }
 
+        public function savePost($post_id ): void{
+
+
+            if (!$this->validateUser($post_id)) return;
+
+
+            if( isset( $_POST['action'] ) && $_POST['action'] == 'editpost' ){
+                $old_link_text = get_post_meta( $post_id, 'rc_slider_link_text', true );
+                $new_link_text = $_POST['rc_slider_link_text'];
+                $old_link_url = get_post_meta( $post_id, 'rc_slider_link_url', true );
+                $new_link_url = $_POST['rc_slider_link_url'];
+
+                if( empty( $new_link_text )){
+                    update_post_meta( $post_id, 'rc_slider_link_text', 'Add some text' );
+                }else{
+                    update_post_meta( $post_id, 'rc_slider_link_text', sanitize_text_field( $new_link_text ), $old_link_text );
+                }
+
+                if( empty( $new_link_url )){
+                    update_post_meta( $post_id, 'rc_slider_link_url', '#' );
+                }else{
+                    update_post_meta( $post_id, 'rc_slider_link_url', sanitize_text_field( $new_link_url ), $old_link_url );
+                }
+
+
+            }
+        }
+
+        private function validateUser($post_id):bool {
+            if( isset( $_POST['mv_slider_nonce'] ) ){
+                if( ! wp_verify_nonce( $_POST['rc_slider_nonce'], 'rc_slider_nonce' ) ){
+                    return false;
+                }
+            }
+
+            if( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ){
+                return false;
+            }
+
+            if( isset( $_POST['post_type'] ) && $_POST['post_type'] === 'rc-slider' ){
+                if( ! current_user_can( 'edit_page', $post_id ) ){
+                    return false;
+                }elseif( ! current_user_can( 'edit_post', $post_id ) ){
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }
