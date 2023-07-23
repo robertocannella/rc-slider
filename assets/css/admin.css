@@ -1,0 +1,9 @@
+.rc-slider-metabox label{
+    color: #f00;
+}
+.rc-slider-metabox td{
+    padding: 5px;
+}
+.rc-slider-metabox th{
+    padding: 10px 10px 5px 0;
+}
