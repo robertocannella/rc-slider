@@ -43,10 +43,16 @@ if (!class_exists('RC_Slider')) {
         {
             $this->defineConstants();
 
+            // ADMIN MENU
             add_action( 'admin_menu', array( $this, 'addMenu' ) );
 
+            // POST TYPE
             require_once ( RC_SLIDER_PATH . '/post-types/class.RC_Slider_Post_Type.php' );
             $rc_slider_post_type = new RC_Slider_Post_Type();
+
+            // SETTINGS PAGE
+            require_once( RC_SLIDER_PATH . 'class.rc-slider-settings.php' );
+            $MV_Slider_Settings = new RC_Slider_Settings();
 
         }
 
@@ -126,6 +132,16 @@ if (!class_exists('RC_Slider')) {
 
         }
         public function rcSliderSettingsPage():void {
+
+            if (!current_user_can('manage_options')) { return;}
+
+            if( isset( $_GET['settings-updated'] ) ){
+                add_settings_error( 'rc_slider_options', 'rc_slider_message', 'Settings Saved', 'success' );
+            }
+
+            settings_errors( 'rc_slider_options' );
+
+            // HTML
             require( RC_SLIDER_PATH . 'views/settings-page.php' );
 
         }
