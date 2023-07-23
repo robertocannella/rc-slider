@@ -152,39 +152,54 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
          * @return void
          * Custom Search Query. Combines meta field with main search. May need to update if searching by category.
          */
+        // SEARCHABLE META DATA
+
         public function customSearchQuery($query): void {
-            global $pagenow, $wpdb;
+            $post_type = 'rc-slider';
+            if ($query->query['post_type'] != $post_type) {
+                return;
+            }
 
             if ( is_search() ) {
-                // Prevent duplicates in the search results
                 // global $wp_query;
-                // error_log(print_r($wp_query->get_queried_object(),true));
+                    // error_log(print_r($wp_query->get_queried_object(),true));
 
-                add_filter( 'posts_distinct', function( $distinct ) {
-                    return "DISTINCT";
-                });
+                    // Prevent duplicates in the search results
+                    add_filter( 'posts_distinct', [$this, 'distinctColumns']);
 
-                // Modify the WHERE clause to include custom meta fields in the search
-                add_filter( 'posts_where', function( $where ) use ( $wpdb ) {
-                    $search_term = get_search_query();
-                    if ( !empty($search_term) ) {
-                        $where = preg_replace(
-                            "/\(\s*".$wpdb->posts.".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
-                            "(".$wpdb->posts.".post_title LIKE $1) OR (rc_slide_pm.meta_value LIKE $1)", $where );
-                    }
-                    return $where;
-                });
+                    // Modify the WHERE clause to include custom meta fields in the search
+                    add_filter( 'posts_where', [$this, 'whereClauseAdjustment'] );
 
-                add_action( 'posts_join', function( $join ) use ( $wpdb ) {
-                    // Check if the wp_postmeta table is already joined
-                    if (strpos($join, $wpdb->postmeta) === false) {
-                        // If not joined, then add the LEFT JOIN clause with the unique alias 'pm'
-                        $join .= ' LEFT JOIN ' . $wpdb->postmeta . ' AS rc_slide_pm ON ' . $wpdb->posts . '.ID = rc_slide_pm.post_id ';
-                    }
-                    return $join;
-                });
+                    // Join the postmeta table for custom meta fields search
+                    add_action( 'posts_join', [$this, 'joinDatabaseColumns'] );
             }
         }
+        public function distinctColumns (): string
+        {
+            return "DISTINCT";
+        }
+        public function whereClauseAdjustment($where){
+            global $wpdb;
+            $search_term = get_search_query();
+            if ( !empty($search_term) ) {
+                // ADD the unique alias '{plugin}_pm'
+
+                $where = preg_replace(
+                    "/\(\s*".$wpdb->posts.".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
+                    "(".$wpdb->posts.".post_title LIKE $1) OR (rc_slider_pm.meta_value LIKE $1)", $where );
+            }
+            return $where;
+        }
+        public function joinDatabaseColumns($join){
+            global $wpdb;
+            // Check if the wp_postmeta table is already joined
+            if (strpos($join, $wpdb->postmeta) === false) {
+                // If not joined, then add the LEFT JOIN clause with the unique alias '{plugin}_pm'
+                $join .= ' LEFT JOIN ' . $wpdb->postmeta . ' AS rc_slider_pm ON ' . $wpdb->posts . '.ID = rc_slider_pm.post_id ';
+            }
+            return $join;
+        }
+
         /**
          * @param $join
          * @return mixed|string
