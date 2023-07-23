@@ -9,9 +9,7 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
             add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
             add_action( 'save_post', [$this, 'savePost'], 10, 2 );
 
-            // Custom Search - JOINS posts meta table with posts table ON rc-slider.post_id = ID
 
-            add_action( 'pre_get_posts', array( $this, 'customSearchQuery' ) );
 
             // ADMIN COLUMNS to include sortable meta data
             add_filter( 'manage_rc-slider_posts_columns', [$this, 'rcSliderCPTColumns']);
@@ -20,6 +18,11 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
                 priority: 10,
                 accepted_args:2);
             add_filter( 'manage_edit-rc-slider_sortable_columns', [$this, 'rcSliderSortableColumns'] );
+
+            // Custom Search - JOINS posts meta table with posts table ON rc-slider.post_id = ID
+
+            add_action( 'pre_get_posts', array( $this, 'customSearchQuery' ) );
+
         }
 
         public function createPostType(): void
@@ -124,7 +127,7 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
             return $columns;
         }
         private function validateUser($post_id):bool {
-            if( isset( $_POST['mv_slider_nonce'] ) ){
+            if( isset( $_POST['rc_slider_nonce'] ) ){
                 if( ! wp_verify_nonce( $_POST['rc_slider_nonce'], 'rc_slider_nonce' ) ){
                     return false;
                 }
@@ -172,9 +175,9 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
                     return $where;
                 });
 
-                // Join the postmeta table for custom meta fields search
                 add_action( 'posts_join', function( $join ) use ( $wpdb ) {
-                    $join .=' LEFT JOIN '.$wpdb->postmeta. ' ON '. $wpdb->posts . '.ID = ' . $wpdb->postmeta . '.post_id ';
+                    // Add a unique alias 'pm' for the wp_postmeta table using AS keyword
+                    $join .= ' LEFT JOIN ' . $wpdb->postmeta . ' AS pm ON ' . $wpdb->posts . '.ID = pm.post_id ';
                     return $join;
                 });
             }
