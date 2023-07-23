@@ -9,7 +9,8 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
             add_action('add_meta_boxes', [$this, 'addMetaBoxes']);
             add_action( 'save_post', [$this, 'savePost'], 10, 2 );
 
-            // Custom Search
+            // Custom Search - JOINS posts meta table with posts table ON rc-slider.post_id = ID
+
             add_action( 'pre_get_posts', array( $this, 'customSearchQuery' ) );
 
             // ADMIN COLUMNS to include sortable meta data
@@ -40,7 +41,7 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
                 'exclude_from_search' => false,
                 'public' => true,
                 'publicly_queryable' => true,
-                'show_in_menu' => true,
+                'show_in_menu' => false, // we have custom menu - turn this off
                 'show_in_admin_bar' => true,
                 'query_var' => true,
                 'rewrite' => array('slug' => 'slider'),
@@ -153,6 +154,9 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
 
             if ( is_search() ) {
                 // Prevent duplicates in the search results
+                // global $wp_query;
+                // error_log(print_r($wp_query->get_queried_object(),true));
+
                 add_filter( 'posts_distinct', function( $distinct ) {
                     return "DISTINCT";
                 });

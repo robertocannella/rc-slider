@@ -42,8 +42,12 @@ if (!class_exists('RC_Slider')) {
         public function __construct()
         {
             $this->defineConstants();
+
+            add_action( 'admin_menu', array( $this, 'addMenu' ) );
+
             require_once ( RC_SLIDER_PATH . '/post-types/class.RC_Slider_Post_Type.php' );
             $rc_slider_post_type = new RC_Slider_Post_Type();
+
         }
 
         /**
@@ -87,7 +91,44 @@ if (!class_exists('RC_Slider')) {
         public static function uninstall(){
 
         }
+        /**
+         * Build menus
+         */
+        public function addMenu(){
+            add_menu_page(
+                page_title: 'RC Slider Options',
+                menu_title: 'RC Slider',
+                capability: 'manage_options', // More on roles : https://wordpress.org/documentation/article/roles-and-capabilities/#capability-vs-role-table
+                menu_slug: 'rc_slider_admin',
+                callback: array( $this, 'rcSliderSettingsPage' ),
+                icon_url: 'dashicons-images-alt2',
+                position: 10
+            );
+            add_submenu_page(
+                parent_slug: 'rc_slider_admin',
+                page_title: 'Manage Slides',
+                menu_title: 'Manage Slides',
+                capability: 'manage_options',
+                menu_slug: 'edit.php?post_type=rc-slider',
+                callback: null,
+                position: null
+            );
 
+            add_submenu_page(
+                parent_slug: 'rc_slider_admin',
+                page_title: 'Add New Slide',
+                menu_title: 'Add New Slide',
+                capability: 'manage_options',
+                menu_slug: 'post-new.php?post_type=rc-slider',
+                callback: null,
+                position: null
+            );
+
+        }
+        public function rcSliderSettingsPage():void {
+            require( RC_SLIDER_PATH . 'views/settings-page.php' );
+
+        }
     }
 }
 
