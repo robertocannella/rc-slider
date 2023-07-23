@@ -153,7 +153,7 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
          * Custom Search Query. Combines meta field with main search. May need to update if searching by category.
          */
         public function customSearchQuery($query): void {
-            global $wpdb;
+            global $pagenow, $wpdb;
 
             if ( is_search() ) {
                 // Prevent duplicates in the search results
@@ -170,14 +170,17 @@ if (!class_exists( 'RC_Slider_Post_Type ') ) {
                     if ( !empty($search_term) ) {
                         $where = preg_replace(
                             "/\(\s*".$wpdb->posts.".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
-                            "(".$wpdb->posts.".post_title LIKE $1) OR (".$wpdb->postmeta.".meta_value LIKE $1)", $where );
+                            "(".$wpdb->posts.".post_title LIKE $1) OR (rc_slide_pm.meta_value LIKE $1)", $where );
                     }
                     return $where;
                 });
 
                 add_action( 'posts_join', function( $join ) use ( $wpdb ) {
-                    // Add a unique alias 'pm' for the wp_postmeta table using AS keyword
-                    $join .= ' LEFT JOIN ' . $wpdb->postmeta . ' AS pm ON ' . $wpdb->posts . '.ID = pm.post_id ';
+                    // Check if the wp_postmeta table is already joined
+                    if (strpos($join, $wpdb->postmeta) === false) {
+                        // If not joined, then add the LEFT JOIN clause with the unique alias 'pm'
+                        $join .= ' LEFT JOIN ' . $wpdb->postmeta . ' AS rc_slide_pm ON ' . $wpdb->posts . '.ID = rc_slide_pm.post_id ';
+                    }
                     return $join;
                 });
             }
